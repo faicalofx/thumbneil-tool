@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult } from "../types";
 
@@ -8,15 +7,31 @@ export const analyzeThumbnails = async (
   titleA: string,
   titleB: string
 ): Promise<AnalysisResult> => {
-  // 1. Check for manual key in localStorage (useful for user-provided keys)
-  const manualKey = localStorage.getItem('manual_api_key');
-  
-  // 2. Fallback to Netlify Environment Variable (process.env.API_KEY)
-  // On Netlify, this is injected during build or via platform injection
-  const apiKey = manualKey || process.env.API_KEY || '';
+  /**
+   * TESTING OVERRIDE: 
+   * For Netlify without a build step, hardcoding here is the most reliable way.
+   */
+  const HARDCODED_KEY = ""; // <--- PASTE YOUR KEY HERE FOR NETLIFY TESTING
+
+  // Safe check for API Key
+  const getApiKey = () => {
+    if (HARDCODED_KEY) return HARDCODED_KEY;
+    
+    const manualKey = localStorage.getItem('manual_api_key');
+    if (manualKey) return manualKey;
+
+    // Browser shim check
+    try {
+      return (window as any).process?.env?.API_KEY;
+    } catch (e) {
+      return undefined;
+    }
+  };
+
+  const apiKey = getApiKey();
   
   if (!apiKey) {
-    throw new Error("API Key not found. Please set 'API_KEY' in Netlify Environment Variables or enter it manually in the Admin Panel.");
+    throw new Error("Gemini API Key missing. Please hardcode it in services/geminiService.ts or use the Admin Dashboard Connection tab.");
   }
 
   const ai = new GoogleGenAI({ apiKey });

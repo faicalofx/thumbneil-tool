@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,6 +42,14 @@
             background: #374151;
         }
     </style>
+    <script>
+        // Shim process.env for browser environment
+        window.process = {
+            env: {
+                API_KEY: undefined // Netlify can't inject this directly into the browser at runtime without a build step
+            }
+        };
+    </script>
 <script type="importmap">
 {
   "imports": {
