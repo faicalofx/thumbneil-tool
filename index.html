@@ -43,12 +43,10 @@
         }
     </style>
     <script>
-        // Shim process.env for browser environment
-        window.process = {
-            env: {
-                API_KEY: undefined // Netlify can't inject this directly into the browser at runtime without a build step
-            }
-        };
+        // Polyfill for process.env
+        window.process = { env: { NODE_ENV: 'production' } };
+        // Global placeholder for API key injection if needed via Netlify snippets
+        window.GEMINI_API_KEY = ""; 
     </script>
 <script type="importmap">
 {
@@ -64,7 +62,6 @@
 </head>
 <body>
     <div id="root"></div>
-    <!-- Load index.tsx using Babel standalone for transpilation -->
     <script type="text/babel" data-presets="react,typescript" data-type="module" src="index.tsx"></script>
 </body>
 </html>

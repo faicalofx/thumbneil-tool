@@ -1,3 +1,5 @@
+
+// Fix: Import only the correct GoogleGenAI and Type from @google/genai
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult } from "../types";
 
@@ -7,34 +9,9 @@ export const analyzeThumbnails = async (
   titleA: string,
   titleB: string
 ): Promise<AnalysisResult> => {
-  /**
-   * TESTING OVERRIDE: 
-   * For Netlify without a build step, hardcoding here is the most reliable way.
-   */
-  const HARDCODED_KEY = ""; // <--- PASTE YOUR KEY HERE FOR NETLIFY TESTING
-
-  // Safe check for API Key
-  const getApiKey = () => {
-    if (HARDCODED_KEY) return HARDCODED_KEY;
-    
-    const manualKey = localStorage.getItem('manual_api_key');
-    if (manualKey) return manualKey;
-
-    // Browser shim check
-    try {
-      return (window as any).process?.env?.API_KEY;
-    } catch (e) {
-      return undefined;
-    }
-  };
-
-  const apiKey = getApiKey();
-  
-  if (!apiKey) {
-    throw new Error("Gemini API Key missing. Please hardcode it in services/geminiService.ts or use the Admin Dashboard Connection tab.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Fix: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+  // Fix: Use the named parameter format for initializing the GoogleGenAI instance.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `
     Act as a world-class YouTube growth expert. Compare these two thumbnails (A and B) and their titles.
@@ -58,17 +35,17 @@ export const analyzeThumbnails = async (
   `;
 
   try {
+    // Fix: Use ai.models.generateContent directly with model name and content.
+    // Fix: Select gemini-3-flash-preview for general content analysis tasks.
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: "image/png", data: imageA.split(',')[1] } },
-            { inlineData: { mimeType: "image/png", data: imageB.split(',')[1] } }
-          ]
-        }
-      ],
+      contents: {
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType: "image/png", data: imageA.split(',')[1] } },
+          { inlineData: { mimeType: "image/png", data: imageB.split(',')[1] } }
+        ]
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -89,8 +66,9 @@ export const analyzeThumbnails = async (
       }
     });
 
-    const result = JSON.parse(response.text || '{}');
-    return result as AnalysisResult;
+    // Fix: Access response text using the .text property (not a method).
+    const jsonStr = response.text?.trim() || '{}';
+    return JSON.parse(jsonStr) as AnalysisResult;
   } catch (error: any) {
     console.error("Analysis failed:", error);
     throw error;
