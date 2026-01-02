@@ -8,8 +8,17 @@ export const analyzeThumbnails = async (
   titleA: string,
   titleB: string
 ): Promise<AnalysisResult> => {
-  // Always initialize right before the call to pick up the latest API key from the environment/dialog
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // 1. Prioritize manually entered key from Admin Panel
+  const manualKey = localStorage.getItem('manual_api_key');
+  
+  // 2. Fallback to Environment Variable
+  const apiKey = manualKey || process.env.API_KEY || '';
+  
+  if (!apiKey) {
+    throw new Error("No API Key configured. Please go to the Admin panel to set one.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
     Act as a world-class YouTube growth expert. Compare these two thumbnails (A and B) and their titles.
@@ -68,12 +77,6 @@ export const analyzeThumbnails = async (
     return result as AnalysisResult;
   } catch (error: any) {
     console.error("Analysis failed:", error);
-    
-    // Check for "Requested entity was not found" error to help user debug key selection
-    if (error?.message?.includes("Requested entity was not found")) {
-      console.warn("API Key might be invalid or missing billing. Consider re-linking in Admin.");
-    }
-    
     throw error;
   }
 };
