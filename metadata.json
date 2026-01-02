@@ -1,0 +1,7 @@
+{
+  "name": "StatStream AI",
+  "description": "A high-performance SaaS platform for YouTube creators to simulate and predict CTR using AI-powered thumbnail and title analysis.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
