@@ -20,6 +20,9 @@ const AdminDashboard: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [apiLogs, setApiLogs] = useState<ApiLog[]>([]);
 
+  // Netlify ENV Key check
+  const envKeyExists = !!process.env.API_KEY;
+
   useEffect(() => {
     // Load settings
     const storedSettings = localStorage.getItem('statstream_settings');
@@ -60,7 +63,6 @@ const AdminDashboard: React.FC = () => {
   const testConnection = async () => {
     setConnectionStatus('testing');
     try {
-      // Prioritize the state's manual key for the test
       const keyToUse = manualApiKey || process.env.API_KEY || '';
       const ai = new GoogleGenAI({ apiKey: keyToUse });
       const response = await ai.models.generateContent({
@@ -155,21 +157,30 @@ const AdminDashboard: React.FC = () => {
               <div className="glass p-8 rounded-[32px] border-white/10 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h3 className="text-xl font-bold">Manual API Setup</h3>
-                    <p className="text-sm text-gray-500 mt-1">Type your Google Gemini API key below to enable analysis.</p>
+                    <h3 className="text-xl font-bold">API Configuration</h3>
+                    <p className="text-sm text-gray-500 mt-1">Manual entry overrides environment variables.</p>
                   </div>
-                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-black border ${manualApiKey ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
-                    {manualApiKey ? 'KEY CONFIGURED' : 'PENDING SETUP'}
+                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-black border ${envKeyExists || manualApiKey ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
+                    {manualApiKey ? 'MANUAL KEY ACTIVE' : envKeyExists ? 'NETLIFY ENV ACTIVE' : 'PENDING SETUP'}
                   </div>
                 </div>
 
                 <div className="space-y-6">
+                  {envKeyExists && !manualApiKey && (
+                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center space-x-3">
+                      <span className="text-xl">🚀</span>
+                      <p className="text-xs text-blue-400 font-medium">
+                        Netlify Environment Variable <code className="bg-blue-900/40 px-1 rounded">API_KEY</code> detected. Application is ready.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Google Gemini API Key</label>
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Manual Override Key</label>
                     <div className="flex space-x-2">
                       <input 
                         type="password"
-                        placeholder="AIzaSy..."
+                        placeholder="Paste Key (Overrides Env Vars)"
                         className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 text-white font-mono text-sm"
                         value={manualApiKey}
                         onChange={(e) => setManualApiKey(e.target.value)}
@@ -178,12 +189,11 @@ const AdminDashboard: React.FC = () => {
                         onClick={handleSaveKey}
                         className="bg-blue-600 hover:bg-blue-700 px-6 rounded-xl font-bold text-sm transition-all active:scale-95"
                       >
-                        Save Key
+                        Save
                       </button>
                       <button 
                         onClick={handleClearKey}
                         className="bg-gray-800 hover:bg-red-600 px-4 rounded-xl font-bold text-sm transition-all"
-                        title="Clear Key"
                       >
                         🗑️
                       </button>
@@ -193,7 +203,7 @@ const AdminDashboard: React.FC = () => {
                   <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                     <button 
                       onClick={testConnection}
-                      disabled={connectionStatus === 'testing' || !manualApiKey}
+                      disabled={connectionStatus === 'testing' || (!manualApiKey && !envKeyExists)}
                       className={`text-sm font-bold flex items-center px-4 py-2 rounded-lg transition-all ${
                         connectionStatus === 'testing' ? 'text-gray-600' : 'text-blue-400 hover:bg-blue-400/10'
                       }`}
@@ -213,7 +223,7 @@ const AdminDashboard: React.FC = () => {
 
               <div className="glass p-8 rounded-[32px] border-white/10">
                 <h3 className="text-lg font-bold mb-6 flex items-center">
-                  <span className="mr-2">📡</span> Traffic Monitor
+                  <span className="mr-2">📡</span> Infrastructure Logs
                 </h3>
                 <div className="space-y-3">
                   {apiLogs.map(log => (
@@ -231,15 +241,19 @@ const AdminDashboard: React.FC = () => {
 
             <div className="space-y-8 text-sm">
               <div className="glass p-6 rounded-[24px] border-white/5">
-                <h4 className="font-black text-gray-500 uppercase tracking-widest mb-4">Deployment Note</h4>
-                <p className="text-gray-400 leading-relaxed text-xs">
-                  This key is stored locally in your browser. If you deploy to Netlify, your visitors will need to provide their own key in this panel, or you can set <code className="text-blue-400 font-mono">API_KEY</code> in Netlify Environment Variables for global access.
-                </p>
+                <h4 className="font-black text-gray-500 uppercase tracking-widest mb-4">Netlify Guide</h4>
+                <div className="space-y-4 text-xs text-gray-400 leading-relaxed">
+                  <p>1. Go to Netlify Dashboard > Site Settings.</p>
+                  <p>2. Select <strong>Environment variables</strong>.</p>
+                  <p>3. Add <code className="text-blue-400 font-mono">API_KEY</code> with your Gemini key.</p>
+                  <p>4. Trigger a new deploy to activate.</p>
+                </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* CMS, Posts, and Leads tabs follow same structure as before */}
         {activeTab === 'content' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6 glass p-8 rounded-3xl border-white/5">

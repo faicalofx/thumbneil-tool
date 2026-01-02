@@ -8,14 +8,15 @@ export const analyzeThumbnails = async (
   titleA: string,
   titleB: string
 ): Promise<AnalysisResult> => {
-  // 1. Prioritize manually entered key from Admin Panel
+  // 1. Check for manual key in localStorage (useful for user-provided keys)
   const manualKey = localStorage.getItem('manual_api_key');
   
-  // 2. Fallback to Environment Variable
+  // 2. Fallback to Netlify Environment Variable (process.env.API_KEY)
+  // On Netlify, this is injected during build or via platform injection
   const apiKey = manualKey || process.env.API_KEY || '';
   
   if (!apiKey) {
-    throw new Error("No API Key configured. Please go to the Admin panel to set one.");
+    throw new Error("API Key not found. Please set 'API_KEY' in Netlify Environment Variables or enter it manually in the Admin Panel.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
